@@ -1,5 +1,30 @@
-package dev.kwasi.echoservercomplete
+/*
+-------------------------------------------
+Student Information:
+-------------------------------------------
+Student Name: Teal Trim
+Student ID: 816024202
+Course: Wireless and Mobile Computing (COMP3606)
+Assignment: COMP3606 Assignment 1
+Date: 30/09/2024
+-------------------------------------------
+*/
 
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+//PACKAGE STATEMENTS:
+//-----------------------------------------------------------------------------------------------------------------------
+package dev.kwasi.echoservercomplete
+//-----------------------------------------------------------------------------------------------------------------------
+
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+//IMPORT STATEMENTS:
+//-----------------------------------------------------------------------------------------------------------------------
 import android.content.Context
 import android.content.IntentFilter
 import android.net.wifi.p2p.WifiP2pDevice
@@ -25,11 +50,21 @@ import dev.kwasi.echoservercomplete.peerlist.PeerListAdapter
 import dev.kwasi.echoservercomplete.peerlist.PeerListAdapterInterface
 import dev.kwasi.echoservercomplete.wifidirect.WifiDirectInterface
 import dev.kwasi.echoservercomplete.wifidirect.WifiDirectManager
+//-----------------------------------------------------------------------------------------------------------------------
 
+
+
+
+//-----------------------------------------------------------------------------------------------------------------------
+//COMMUNICATION ACTIVITY CLASS:
+//-----------------------------------------------------------------------------------------------------------------------
 class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerListAdapterInterface, NetworkMessageInterface {
+    //-------------------------------------------------------------------------------------------------------------------
+    //VARIABLES:
+    //-------------------------------------------------------------------------------------------------------------------
     private var wfdManager: WifiDirectManager? = null
 
-    private val intentFilter = IntentFilter().apply {
+    private val intentFilter = IntentFilter().apply{
         addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
         addAction(WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION)
         addAction(WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION)
@@ -45,7 +80,16 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     private var server: Server? = null
     private var client: Client? = null
     private var deviceIp: String = ""
+    private var cStudentID: String = ""
+    private var validID : Boolean = false
+    //-------------------------------------------------------------------------------------------------------------------
 
+
+
+
+    //-------------------------------------------------------------------------------------------------------------------
+    //ACTIVITY LIFECYCLE METHODS:
+    //-------------------------------------------------------------------------------------------------------------------
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -84,12 +128,47 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             unregisterReceiver(it)
         }
     }
+    //-------------------------------------------------------------------------------------------------------------------
+
+
+
+
+    //-------------------------------------------------------------------------------------------------------------------
+    //OTHER METHODS:
+    //-------------------------------------------------------------------------------------------------------------------
     fun createGroup(view: View) {
         wfdManager?.createGroup()
     }
 
     fun discoverNearbyPeers(view: View) {
+        val etStudentID: EditText = findViewById(R.id.etStudentID)
+        val studentID = etStudentID.text.toString()
+
+        //Check for empty student ID:
+        if (studentID.isEmpty()) {
+            Toast.makeText(this, "Please enter a valid Student ID.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            val idNumber = studentID.toInt()
+
+            //Check for out of range student ID:
+            if (idNumber < 816000000 || idNumber > 816999999) {
+                Toast.makeText(this, "Please enter a valid Student ID.", Toast.LENGTH_SHORT).show()
+                return
+            }
+        } catch (e: NumberFormatException) {
+            Toast.makeText(this, "Please enter a numeric Student ID.", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        cStudentID = studentID
+
+        // Initiate the discovery of nearby peers (classes)
         wfdManager?.discoverPeers()
+
+        Toast.makeText(this, "Searching for nearby classes...", Toast.LENGTH_SHORT).show()
     }
 
     private fun updateUI(){
@@ -97,8 +176,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         // IF the WFD adapter is NOT enabled then
         //      Show UI that says turn on the wifi adapter
         // ELSE IF there is NO WFD connection then i need to show a view that allows the user to either
-            // 1) create a group with them as the group owner OR
-            // 2) discover nearby groups
+        // 1) create a group with them as the group owner OR
+        // 2) discover nearby groups
         // ELSE IF there are nearby groups found, i need to show them in a list
         // ELSE IF i have a WFD connection i need to show a chat interface where i can send/receive messages
         val wfdAdapterErrorView:ConstraintLayout = findViewById(R.id.clWfdAdapterDisabled)
@@ -163,7 +242,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             server = Server(this)
             deviceIp = "192.168.49.1"
         } else if (!groupInfo.isGroupOwner && client == null) {
-            client = Client(this)
+            client = Client(this, cStudentID)
             deviceIp = client!!.ip
         }
     }
@@ -183,5 +262,6 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             chatListAdapter?.addItemToEnd(content)
         }
     }
-
+    //-------------------------------------------------------------------------------------------------------------------
 }
+//-----------------------------------------------------------------------------------------------------------------------
