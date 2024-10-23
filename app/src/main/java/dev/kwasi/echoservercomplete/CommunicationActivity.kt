@@ -31,9 +31,12 @@ import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pGroup
 import android.net.wifi.p2p.WifiP2pManager
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.addCallback
+import android.window.OnBackInvokedDispatcher
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
@@ -128,6 +131,12 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
             unregisterReceiver(it)
         }
     }
+
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        super.onBackPressed()
+        client?.close()
+    }
     //-------------------------------------------------------------------------------------------------------------------
 
 
@@ -196,11 +205,18 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     fun sendMessage(view: View) {
         val etMessage:EditText = findViewById(R.id.etMessage)
         val etString = etMessage.text.toString()
-        val content = ContentModel(etString, deviceIp)
-        etMessage.text.clear()
-        client?.sendMessage(content)
-        chatListAdapter?.addItemToEnd(content)
-
+        if(etString.isNotEmpty()) {
+            val content = ContentModel(etString, deviceIp)
+            etMessage.text.clear()
+            val plainMessage: ContentModel = ContentModel(content.message, content.senderIp)
+            client?.sendMessageEncrypted(content)
+            chatListAdapter?.addItemToEnd(plainMessage)
+        }
+        else
+        {
+            val toast = Toast.makeText(this, "Please Enter Text into the Field", Toast.LENGTH_SHORT)
+            toast.show()
+        }
     }
 
     override fun onWiFiDirectStateChanged(isEnabled: Boolean) {
@@ -265,3 +281,4 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     //-------------------------------------------------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------------------------------------------------
+

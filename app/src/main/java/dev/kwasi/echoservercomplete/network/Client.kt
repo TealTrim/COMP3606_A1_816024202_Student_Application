@@ -109,11 +109,11 @@ class Client (private val networkMessageInterface: NetworkMessageInterface, priv
                 verificationPlainText = verificationContent.message //Convert Ack to Plain Text.
                 var verificationPlainTextDecrypted = decryptMessage(verificationPlainText, aesKey, aesIV)
                 if (verificationPlainTextDecrypted != "ACK()") {
-                    //Log.d("HANDSHAKE", "Acknowledgement Received.")
+                    Log.e("HANDSHAKE", "Acknowledgement Received.")
                     handshake = true
                 }
                 else{
-                    //Log.d("HANDSHAKE", "Acknowledgement NOT Received.")
+                    Log.e("HANDSHAKE", "Acknowledgement NOT Received.")
                     close()
                     handshake = false
                 }
@@ -133,12 +133,12 @@ class Client (private val networkMessageInterface: NetworkMessageInterface, priv
                 verificationContent = Gson().fromJson(verificationMessage, ContentModel::class.java)
                 verificationPlainText = verificationContent.message
                 verificationPlainTextDecrypted = decryptMessage(verificationPlainText, aesKey, aesIV)
-                if (verificationPlainTextDecrypted != "VALID") {
-                    //Log.d("HANDSHAKE", "Student ID is Valid.")
+                if (verificationPlainTextDecrypted == "VALID") {
+                    Log.e("HANDSHAKE", "Student ID is Valid.")
                     handshake = true
                 }
                 else{
-                    //Log.d("HANDSHAKE", "Student ID is NOT Valid.")
+                    Log.e("HANDSHAKE", "Student ID rejected by lecturer.")
                     close()
                     handshake = false
                 }
@@ -185,8 +185,24 @@ class Client (private val networkMessageInterface: NetworkMessageInterface, priv
 
     }
 
+    fun sendMessageEncrypted(content: ContentModel){
+        thread {
+            if (!clientSocket.isConnected){
+                throw Exception("We aren't currently connected to the server!")
+            }
+            content.message = encryptMessage(content.message, aesKey, aesIV)
+            val contentAsStr:String = Gson().toJson(content)
+            writer.write("$contentAsStr\n")
+            writer.flush()
+        }
+
+    }
+
     fun close(){
+        sendMessageEncrypted(ContentModel("||__||CLOSE_SOCKET||__||",ip))
+        Thread.sleep(50)
         clientSocket.close()
+
     }
     //-------------------------------------------------------------------------------------------------------------------
 
